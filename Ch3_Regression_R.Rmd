@@ -308,12 +308,21 @@ Here are few rules:
 - You need to explain why you added each variable.
 
 ```{r,eval=FALSE,echo=show_code}
-lmfit_2008<- # ["your model here"] # use ames_raw_2008
+lmfit_2008<- lm(log(SalePrice+1) ~ `Year Built` + `Year Remod/Add` +
+                  `Full Bath` + `Gr Liv Area` +
+                  `Total Bsmt SF` + `1st Flr SF` + 
+                  `Garage Area`, 
+                ames_raw_2008) # use ames_raw_2008
+summary(lmfit_2008)
 ```
+Predictors chosen according to correlation map.
+
 
 When you decide on your model use the following to come up with your test loss.
 ```{r,eval=FALSE,echo=show_code}
-pred_2009<-exp(predict(lmfit_2008,newdata=ames_raw_2009))
+log_pred_2009 <- predict(lmfit_2008, newdata=ames_raw_2009)
+pred_2009 <- na.omit(exp(log_pred_2009))
+#pred_2009<-exp(predict(lmfit_2008,newdata=ames_raw_2009))
 calc_loss(pred_2009,ames_raw_2009$SalePrice)
 ```
 
@@ -324,8 +333,7 @@ Try to answer the following additional questions.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+
 ```
 
 Your answer:
