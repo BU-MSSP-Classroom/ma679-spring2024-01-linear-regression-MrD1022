@@ -1,7 +1,7 @@
 ---
 title: "Regression"
-author: "Your Name"
-date: "2022-12-21"
+author: "Mingrui Du"
+date: "2024-01-23"
 output: html_document
 ---
 
@@ -43,7 +43,7 @@ show_code <- TRUE
 ## In class activity
 ### Ames Housing data
 
-Please take a look at the Ames Hoursing data.
+Please take a look at the Ames Housing data.
 ```{r,echo=show_code}
 library(AmesHousing)
 ?ames_raw
@@ -52,14 +52,16 @@ The goal of this exercise is to predict the price of the house.
 
 Here is a histogram of the sales price with red line showing the mean.
 ```{r,echo=show_code,fig.width=7,fig.height=4.5}
-ggplot(ames_raw)+geom_histogram(fill="skyblue")+aes(x=SalePrice)+
-  geom_vline(xintercept = mean(ames_raw$SalePrice),col="red")
+ggplot(ames_raw) + geom_histogram(fill = "skyblue") + 
+  aes(x = SalePrice) + 
+  geom_vline(xintercept = mean(ames_raw$SalePrice), col = "red")
 summary(ames_raw$SalePrice)
 ```
 
 Initial linear model without a predictor
 ```{r,echo=show_code}
-lmfit_null<- lm(SalePrice~1,ames_raw)
+# null model for SalePrice
+lmfit_null<- lm(SalePrice ~ 1,ames_raw)
 summary(lmfit_null)
 ```
 
@@ -194,8 +196,18 @@ corrplot(M, type="upper", order="hclust",
 ```
 
 ```{r,fig.width=9,fig.height=7,echo=show_code}
-mames<-melt(ames_raw[,c("Lot Area","Year Built","Year Remod/Add","Total Bsmt SF","1st Flr SF","2nd Flr SF","Low Qual Fin SF","Gr Liv Area","Full Bath","Half Bath","Bsmt Full Bath","Bsmt Half Bath","TotRms AbvGrd","Garage Area","Wood Deck SF","Open Porch SF","Pool Area","SalePrice")],id.vars = "SalePrice")
-ggplot(mames)+geom_point()+aes(x=value,y=SalePrice)+facet_wrap(variable~.,scales = "free")
+mames <- melt(ames_raw[,c("Lot Area","Year Built", "Year Remod/Add",
+                          "Total Bsmt SF", "1st Flr SF",
+                          "2nd Flr SF", "Low Qual Fin SF",
+                          "Gr Liv Area", "Full Bath",
+                          "Half Bath", "Bsmt Full Bath",
+                          "Bsmt Half Bath", "TotRms AbvGrd",
+                          "Garage Area", "Wood Deck SF",
+                          "Open Porch SF", "Pool Area","SalePrice")],
+              id.vars = "SalePrice")
+ggplot(mames) + geom_point() + 
+  aes(x=value,y=SalePrice) + 
+  facet_wrap(variable~.,scales = "free")
 ```
 
 ### thinking about the `Lot Area`
@@ -237,7 +249,12 @@ rolling_median <- function(formula, data, n_roll = 11, ...) {
 predict.rollmed <- function(mod, newdata, ...) {
   setNames(mod$f(newdata$x), newdata$x)
 }
-p=ggplot(ames_raw)+geom_point()+aes(x=saledt,y=SalePrice)+xlab("Sale Date")+ylab("Sale Price")+scale_y_log10()+geom_smooth(formula = y ~ x, method = "rolling_median",se=FALSE)+geom_vline(xintercept=ym("2008-01"),lty=2,col="orange")
+p = ggplot(ames_raw) + geom_point() + 
+  aes(x=saledt,y=SalePrice) + 
+  xlab("Sale Date") + ylab("Sale Price") + 
+  scale_y_log10() + 
+  geom_smooth(formula = y ~ x, method = "rolling_median",se=FALSE) +
+  geom_vline(xintercept=ym("2008-01"),lty=2,col="orange")
 p3 <- ggMarginal(p, margins = 'y', fill="skyblue", size=4,type="histogram")
 p3
 ```
