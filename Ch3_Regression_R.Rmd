@@ -52,38 +52,48 @@ The goal of this exercise is to predict the price of the house.
 
 Here is a histogram of the sales price with red line showing the mean.
 ```{r,echo=show_code,fig.width=7,fig.height=4.5}
-ggplot(ames_raw) + geom_histogram(fill = "skyblue") + 
+ggplot(ames_raw) + geom_histogram(fill = "skyblue") + # SalePrice histogram
   aes(x = SalePrice) + 
-  geom_vline(xintercept = mean(ames_raw$SalePrice), col = "red")
+  geom_vline(xintercept = mean(ames_raw$SalePrice), col = "red") # mean of SalePrice
 summary(ames_raw$SalePrice)
 ```
 
 Initial linear model without a predictor
 ```{r,echo=show_code}
-# null model for SalePrice
+# Modeling: null model for SalePrice
 lmfit_null<- lm(SalePrice ~ 1,ames_raw)
 summary(lmfit_null)
 ```
 
 How good is this result?  Let's look at RMSE.
 ```{r,echo=show_code}
+# Root-mean-square Deviation
 sqrt(mean(residuals(lmfit_null)^2))
 ```
 
 Since the price is right skewed lets log transformation the outcome
 ```{r,echo=show_code,fig.width=7,fig.height=4.5}
-ggplot(ames_raw)+geom_histogram(fill="skyblue")+aes(x=SalePrice)+geom_vline(xintercept = exp(mean(log(ames_raw$SalePrice))),col="red")+scale_x_log10()
+# Visualization - log transformation
+ggplot(ames_raw) + 
+  geom_histogram(fill = "skyblue") + 
+  aes(x = SalePrice) + 
+  geom_vline(xintercept = exp(mean(log(ames_raw$SalePrice))),
+             col="red") + # vertical line
+  scale_x_log10()
 ```
 
 Fitting the same model on the log transformed outcome
 ```{r,echo=show_code}
-lmfit_null_log<- lm(log(SalePrice)~1,ames_raw)
+# Modeling: Log Transformation, null model
+lmfit_null_log <- lm(log(SalePrice) ~ 1, ames_raw)
 summary(lmfit_null_log)
 ```
 
 RMSE is
 ```{r,echo=show_code}
-sqrt(mean((ames_raw$SalePrice-exp(predict(lmfit_null_log)))^2))
+sqrt(mean((ames_raw$SalePrice-exp(predict(lmfit_null_log)))^2)) 
+#sqrt(mean(residuals()^2))
+# Lower RMSE means better fit, but here it grows. 
 ```
 
 Notice that the RMSE is actually bigger with log transformed model.
@@ -92,13 +102,24 @@ So should we not transform?  What do we get from the transformation?
 Here is the prediction uncertainty overlayed on the histogram.
 
 ```{r,echo=show_code,fig.width=7,fig.height=4.5}
-intpred=predict(lmfit_null,interval="prediction")
-ggplot(ames_raw)+geom_histogram(fill="skyblue")+aes(x=SalePrice)+geom_vline(xintercept = mean(ames_raw$SalePrice),col="red")+geom_vline(xintercept = intpred[1,2],col="red",lty=2)+geom_vline(xintercept = intpred[1,3],col="red",lty=2)
+# Visualization: Uncertainty (Prediction Interval)
+intpred = predict(lmfit_null, interval = "prediction") # to obtain prediction interval
+ggplot(ames_raw) + 
+  geom_histogram(fill = "skyblue") + 
+  aes(x = SalePrice) + 
+  geom_vline(xintercept = mean(ames_raw$SalePrice),
+             col="red") + 
+  geom_vline(xintercept = intpred[1,2],col="red",lty=2) + 
+  geom_vline(xintercept = intpred[1,3],col="red",lty=2)
 ```
 
 ```{r,echo=show_code,fig.width=7,fig.height=4.5}
-intpredlog=predict(lmfit_null_log,interval="prediction")
-ggplot(ames_raw)+geom_histogram(fill="skyblue")+aes(x=SalePrice)+geom_vline(xintercept = exp(mean(log(ames_raw$SalePrice))),col="red")+scale_x_log10()+
+intpredlog = predict(lmfit_null_log, interval = "prediction")
+ggplot(ames_raw) + 
+  geom_histogram(fill = "skyblue") + aes(x = SalePrice) + 
+  geom_vline(xintercept = exp(mean(log(ames_raw$SalePrice))), 
+             # Calculate mean on log scale then convert
+             col="red") + scale_x_log10()+
   geom_vline(xintercept = exp(intpredlog[1,2]),col="red",lty=2)+
   geom_vline(xintercept = exp(intpredlog[1,3]),col="red",lty=2)
 ```
@@ -111,8 +132,10 @@ Let’s say the model is for an algorithm that buys the house.  If you pay more 
 
 Based on such loss function what is our overall loss if we base our decision on this model?
 ```{r,echo=show_code}
-allres<-residuals(lmfit_null)
-abs(sum(allres[allres<0]))+sum(0.1*(coef(lmfit_null)+allres[allres>0]))
+allres <- residuals(lmfit_null) # actual - predict
+# allres < 0: overpayment; allres > 0: missed profit
+abs( sum(allres[allres<0])) + sum(0.1*(coef(lmfit_null) + allres[allres>0]) ) 
+# coef(lmfit_null) = 180796.1
 ```
 
 ```{r,echo=show_code}
