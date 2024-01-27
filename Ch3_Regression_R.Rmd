@@ -136,11 +136,15 @@ allres <- residuals(lmfit_null) # actual - predict
 # allres < 0: overpayment; allres > 0: missed profit
 abs( sum(allres[allres<0])) + sum(0.1*(coef(lmfit_null) + allres[allres>0]) ) 
 # coef(lmfit_null) = 180796.1
+# coef(lmfit_null) + allres[allres>0] = House Price
 ```
 
 ```{r,echo=show_code}
-allreslog<-ames_raw$SalePrice-exp(predict(lmfit_null_log))
-abs(sum(allreslog[allreslog<0]))+sum(0.1*(exp(coef(lmfit_null_log))+allreslog[allreslog>0]))
+# Loss function on log transformation
+allreslog <- ames_raw$SalePrice - exp(predict(lmfit_null_log)) # residuals
+abs( sum(allreslog[allreslog<0])) + 
+  sum(0.1*(exp(coef(lmfit_null_log)) + 
+             allreslog[allreslog>0]))
 ```
 As you can see with a better calibrated model you have a better performance for more realistic loss.
 
@@ -149,15 +153,20 @@ As you can see with a better calibrated model you have a better performance for 
 We add a predictor `Gr Liv Area`
 
 ```{r,fig.width=7,fig.height=4,echo=show_code,fig.width=7,fig.height=5.5}
-p=ggplot(ames_raw)+geom_point()+aes(x=`Gr Liv Area`,y=SalePrice)+xlab("Above grade (ground) living area square feet")+ylab("Sale Price")+geom_smooth(method="lm",se=FALSE)
+p = ggplot(ames_raw) + 
+  geom_point() + 
+  aes(x=`Gr Liv Area`,y=SalePrice) + 
+  xlab("Above grade (ground) living area square feet") + 
+  ylab("Sale Price") + 
+  geom_smooth(method="lm",se=FALSE)
 p3 <- ggMarginal(p, margins = 'both', fill="skyblue", size=4,type="histogram")
 p3
 ```
 Using `Gr Liv Area` as predictor
 ```{r,fig.width=9,fig.height=6,echo=show_code}
-lmfit_liv_area_0<- lm(SalePrice~`Gr Liv Area`,ames_raw)
-lmfit_liv_area_1<- lm(log(SalePrice)~`Gr Liv Area`,ames_raw)
-lmfit_liv_area_2<- lm(log(SalePrice)~log(`Gr Liv Area`),ames_raw)
+lmfit_liv_area_0 <- lm(SalePrice ~ `Gr Liv Area`, ames_raw)
+lmfit_liv_area_1 <- lm(log(SalePrice) ~ `Gr Liv Area`, ames_raw) # log trans
+lmfit_liv_area_2 <- lm(log(SalePrice) ~ log(`Gr Liv Area`),ames_raw) # log-log
 gridExtra::grid.arrange(
 ggplot(ames_raw)+geom_point()+aes(x=`Gr Liv Area`,y=SalePrice)+xlab("Above grade (ground) living area square feet")+ylab("Sale Price")+geom_smooth(method="lm",se=FALSE),
 ggplot(ames_raw)+geom_point()+aes(x=`Gr Liv Area`,y=SalePrice)+xlab("Above grade (ground) living area square feet")+ylab("Sale Price")+geom_smooth(method="lm",se=FALSE)+scale_y_log10(),
@@ -238,12 +247,24 @@ ggplot(mames) + geom_point() +
 When looking at lot area, its no surprise to have some relationship with the price.
 But the relationship is not clear linear one.  Why?
 ```{r,fig.width=6,fig.height=4,echo=show_code}
-ggplot(ames_raw)+geom_point()+aes(x=`Lot Area`,y=SalePrice)+xlab("Lot size in square feet")+ylab("Sale Price")+geom_smooth(method="lm",se=FALSE)+scale_y_log10()+scale_x_log10()#+facet_grid(~`Bedroom AbvGr`)
+ggplot(ames_raw) + geom_point() + 
+  aes(x = `Lot Area`,y = SalePrice) + 
+  xlab("Lot size in square feet") + 
+  ylab("Sale Price") + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  scale_y_log10() + scale_x_log10() #+facet_grid(~`Bedroom AbvGr`)
 ```
 
 If you look at this by the neighborhood it become obvious how in some places size matters more than others.
 ```{r,fig.width=9,fig.height=7,echo=show_code}
-ggplot(ames_raw)+geom_point(alpha=0.3)+aes(x=`Lot Area`,y=SalePrice,color=factor(Neighborhood))+xlab("Above grade (ground) living area square feet")+ylab("Sale Price")+geom_smooth(method="lm",se=FALSE)+scale_y_log10()+scale_x_log10()+ theme(legend.position = "none")+facet_wrap(~Neighborhood)
+ggplot(ames_raw) + geom_point(alpha=0.3) + 
+  aes(x=`Lot Area`, y=SalePrice, 
+      color=factor(Neighborhood)) + 
+  xlab("Above grade (ground) living area square feet") + 
+  ylab("Sale Price") + 
+  geom_smooth(method="lm",se=FALSE) + 
+  scale_y_log10() + scale_x_log10() + 
+  theme(legend.position = "none") + facet_wrap(~Neighborhood)
 
 ```
 
@@ -308,8 +329,8 @@ abs(sum(allreslog_2009[allreslog_2009<0]))+sum(0.1*(exp(coef(lmfit_null_log_2008
 
 Use data of `ames_raw` up to 2008 predict the housing price for the later years.
 ```{r,echo=show_code}
-ames_raw_2008=ames_raw[ames_raw$`Yr Sold`<2008,]
-ames_raw_2009=ames_raw[ames_raw$`Yr Sold`>=2008,]
+ames_raw_2008 = ames_raw[ames_raw$`Yr Sold`<2008,]
+ames_raw_2009 = ames_raw[ames_raw$`Yr Sold`>=2008,]
 ```
 
 Use the following loss function calculator.
@@ -331,14 +352,15 @@ Here are few rules:
 - You need to explain why you added each variable.
 
 ```{r,eval=FALSE,echo=show_code}
-lmfit_2008<- lm(log(SalePrice+1) ~ `Year Built` + `Year Remod/Add` +
+lmfit_2008<- lm(log(SalePrice) ~ `Year Built` + `Year Remod/Add` +
                   `Full Bath` + `Gr Liv Area` +
                   `Total Bsmt SF` + `1st Flr SF` + 
                   `Garage Area`, 
                 ames_raw_2008) # use ames_raw_2008
 summary(lmfit_2008)
 ```
-Predictors chosen according to correlation map.
+Predictors chosen according to correlation map above: 
+predictors having correlation over 0.5 with SalePrice.
 
 
 When you decide on your model use the following to come up with your test loss.
@@ -356,7 +378,25 @@ Try to answer the following additional questions.
 
 Your code:
 ```{r,echo=TRUE}
+ames_raw_2009$pred <- exp(predict(lmfit_2008, newdata=ames_raw_2009))
 
+melt_2009_actual <- melt(ames_raw_2009[, c("Lot Area", "Year Built", "Year Remod/Add",
+                                       "Total Bsmt SF", "Full Bath", 
+                                       "Gr Liv Area", "1st Flr SF",
+                                       "Garage Area", "SalePrice")],
+                  id.vars = "SalePrice")
+melt_2009_pred <- melt(ames_raw_2009[, c("Lot Area", "Year Built", "Year Remod/Add",
+                                       "Total Bsmt SF", "Full Bath", 
+                                       "Gr Liv Area", "1st Flr SF",
+                                       "Garage Area", "pred")],
+                  id.vars = "pred")
+combinded_2009 <- merge(melt_2009_actual, melt_2009_pred, 
+                        by = c("variable", "value"), all.x = TRUE, sort = FALSE)
+ggplot(combinded_2009) + geom_point() +
+  aes(x = variable, y = SalePrice) +
+  #geom_smooth(method = "lm", se = FALSE) +
+  #geom_line(aes(y = pred), color = "blue") +
+  facet_wrap(variable~.,scales = "free")
 ```
 
 Your answer:
@@ -458,15 +498,16 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+auto <- read.csv("Auto.csv")
+lm_8.a <- lm(mpg ~ horsepower, auto)
+summary(lm_8.a)
+
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
+Horsepower is a significant predictor.
 
 ~~~
 
@@ -475,9 +516,16 @@ Comment on the output.
 For example:
 i. Is there a relationship between the predictor and the response?
 
+There is a negative relationship since coefficient for horsepower is less than 0, mpg will decrease as horsepower grows.
+
 ii. How strong is the relationship between the predictor and the response?
 
+p-value of horsepower is small enough thus this predictor is statistically significant; 
+R-squared is around 60%, meaning there are other relationships not captured using this model.
+
 iii. Is the relationship between the predictor and the response positive or negative?
+
+Negative.
 
 iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction intervals?
 
