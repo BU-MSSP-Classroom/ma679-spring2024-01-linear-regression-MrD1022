@@ -46,7 +46,7 @@ show_code <- TRUE
 Please take a look at the Ames Housing data.
 ```{r,echo=show_code}
 library(AmesHousing)
-?ames_raw
+#?ames_raw
 ```
 The goal of this exercise is to predict the price of the house.
 
@@ -365,10 +365,9 @@ predictors having correlation over 0.5 with SalePrice.
 
 When you decide on your model use the following to come up with your test loss.
 ```{r,eval=FALSE,echo=show_code}
-log_pred_2009 <- predict(lmfit_2008, newdata=ames_raw_2009)
-pred_2009 <- na.omit(exp(log_pred_2009))
+pred_2009 <- na.omit(exp(predict(lmfit_2008, newdata=ames_raw_2009)))
 #pred_2009<-exp(predict(lmfit_2008,newdata=ames_raw_2009))
-calc_loss(pred_2009,ames_raw_2009$SalePrice)
+calc_loss(pred_2009, ames_raw_2009$SalePrice)
 ```
 
 Try to answer the following additional questions.
@@ -378,32 +377,14 @@ Try to answer the following additional questions.
 
 Your code:
 ```{r,echo=TRUE}
-ames_raw_2009$pred <- exp(predict(lmfit_2008, newdata=ames_raw_2009))
-
-melt_2009_actual <- melt(ames_raw_2009[, c("Lot Area", "Year Built", "Year Remod/Add",
-                                       "Total Bsmt SF", "Full Bath", 
-                                       "Gr Liv Area", "1st Flr SF",
-                                       "Garage Area", "SalePrice")],
-                  id.vars = "SalePrice")
-melt_2009_pred <- melt(ames_raw_2009[, c("Lot Area", "Year Built", "Year Remod/Add",
-                                       "Total Bsmt SF", "Full Bath", 
-                                       "Gr Liv Area", "1st Flr SF",
-                                       "Garage Area", "pred")],
-                  id.vars = "pred")
-combinded_2009 <- merge(melt_2009_actual, melt_2009_pred, 
-                        by = c("variable", "value"), all.x = TRUE, sort = FALSE)
-ggplot(combinded_2009) + geom_point() +
-  aes(x = variable, y = SalePrice) +
-  #geom_smooth(method = "lm", se = FALSE) +
-  #geom_line(aes(y = pred), color = "blue") +
-  facet_wrap(variable~.,scales = "free")
+pred_2009 <- na.omit(exp(predict(lmfit_2008, newdata=ames_raw_2009)))
+calc_loss(pred_2009, ames_raw_2009$SalePrice)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
+`*This model has a shrinking RMSE of 68504.59, indicating a better fit than null model or single-predictor models.*`
 
 ~~~
 
@@ -412,16 +393,13 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+summary(lmfit_2008)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+`*As seen in the summary, we have large standard errors in "Full Bath" and "1st Flr SF", so these two variables could be excluded.*`
 ~~~
 
 - What interaction makes sense?  Does your model indicate signs of interaction?
@@ -429,14 +407,16 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lmfit_2008_2 <- lm(formula = log(SalePrice) ~ 
+                     `Year Built` * `Year Remod/Add` + 
+                     `Gr Liv Area` * `Total Bsmt SF` + `Garage Area`, data = ames_raw_2008)
+summary(lmfit_2008_2)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+`Here I drop two not significant variables and add interaction between Gr Liv Area" and "Total Bsmt SF". The interaction is significant, we may think it makes sense. Interaction between "Year Built" and "Year Remod/Add" is considered based on correlation map where the two show strong correlation. However, their interaction does not make very much sense in the summary`
 
 
 ~~~
@@ -501,14 +481,12 @@ Your code:
 auto <- read.csv("Auto.csv")
 lm_8.a <- lm(mpg ~ horsepower, auto)
 summary(lm_8.a)
-
 ```
 
 Your answer:
 
 ~~~
-Horsepower is a significant predictor.
-
+`*Horsepower is a significant predictor for mpg.*`
 ~~~
 
 
@@ -516,16 +494,15 @@ Comment on the output.
 For example:
 i. Is there a relationship between the predictor and the response?
 
-There is a negative relationship since coefficient for horsepower is less than 0, mpg will decrease as horsepower grows.
+`*Yes, p-value is really small. There is a negative relationship since coefficient for horsepower is less than 0, mpg will decrease as horsepower grows.*`
 
 ii. How strong is the relationship between the predictor and the response?
 
-p-value of horsepower is small enough thus this predictor is statistically significant; 
-R-squared is around 60%, meaning there are other relationships not captured using this model.
+`*p-value of horsepower is small enough thus this predictor is statistically significant; R-squared is around 60%, meaning the model can explain 60% of mpg value, and there are other relationships not captured using this single-predictor model.*`
 
 iii. Is the relationship between the predictor and the response positive or negative?
 
-Negative.
+`*Negative.*`
 
 iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction intervals?
 
