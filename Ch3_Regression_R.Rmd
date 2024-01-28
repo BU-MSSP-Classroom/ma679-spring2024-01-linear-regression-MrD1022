@@ -597,12 +597,12 @@ The residual plot is unbalanced when predicting mpg value under 20. The residual
 
 Your code:
 ```{r,echo=TRUE, fig.width=8, fig.height=6}
-mames_8 <- melt(auto[,c("cylinders", "displacement",
+mames_9 <- melt(auto[,c("cylinders", "displacement",
                       "horsepower", "weight",
                       "acceleration", "year",
                       "origin", "name","mpg")],
               id.vars = "mpg")
-ggplot(mames_8) + geom_point() + 
+ggplot(mames_9) + geom_point() + 
   aes(x=value,y = mpg) + 
   facet_wrap(variable~.,scales = "free")
 ```
@@ -641,38 +641,53 @@ the predictors. Use the summary() function to print the results.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lm_9.c <- lm(mpg ~ cylinders + displacement + horsepower + weight + 
+               acceleration + year + origin, data = auto)
+summary(lm_9.c)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Adjusted R-squared over 0.81 suggests the model fits well yet still cannot describe some part of the data set.
 ~~~
 
 
 Comment on the output. For instance:
 i. Is there a relationship between the predictors and the response?
+
+ - `*Yes, p-value for displacement, weight, year and origin is significant.*`
+
+
 ii. Which predictors appear to have a statistically significant relationship to the response?
 
+ - `*displacement, weight, year and origin.*`
+
 iii. What does the coefficient for the year variable suggest?
+
+ - Year has a positive effect on mpg, their values change in the same direction. The more to-date the vehicles are, the stronger mpg will be.
 
 (d) Use the plot() function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,echo=TRUE, fig.width=8, fig.height=6}
+#Residuals
+plot(predict(lm_9.c, auto), resid(lm_9.c), 
+     xlab = "Predicted Value", ylab = "Residuals",
+     main = "Residual Plot in Problem 9.c")
+abline(h=0)
+#Leverages, ChatGPT
+plot(hatvalues(lm_9.c), 
+     ylab = "Leverage Values", xlab = "Observation Number",
+     main = "Leverage Plot in Problem 9.c")
+abline(h = 2 * mean(hatvalues(lm_9.c)), col = "red")
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
+Outliers when predicting over 30.
+There are several observations over the mean leverage line, suggesting there could be values that may affect statistics.
 
 ~~~
 
@@ -680,20 +695,27 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lm_9.e <- lm(mpg ~ cylinders:horsepower + displacement:origin + weight + 
+               acceleration * horsepower + year + origin, data = auto)
+summary(lm_9.e)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+I don't know about cars, I guess and read correlation plot.
+cylinders:horsepower, displacement:origin, horsepower:acceleration are all statistically significant.
 ~~~
 
 
 (f) Try a few different transformations of the variables, such as $log(X)$, $\sqrt{X}$, $X^2$. Comment on your findings.
+```{r}
+lm_9.f <- lm(mpg ~ I(cylinders^2) + cylinders:horsepower + 
+               sqrt(horsepower) + log(acceleration) +
+               displacement:origin + weight + acceleration * horsepower + 
+               year + origin, auto)
+summary(lm_9.f)
+```
 
 
 This question should be answered using the Carseats data set.
@@ -701,48 +723,41 @@ This question should be answered using the Carseats data set.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+library(ISLR)
+attach(Carseats)
+carseats <- Carseats
+lm_10.a <- lm(Sales ~ Price + Urban + US, data = carseats)
+summary(lm_10.a)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+The Adj. R-square is only 0.23, the model is not persuasive.
 ~~~
 
 (b) Provide an interpretation of each coefficient in the model. Be careful—some of the variables in the model are qualitative!
 
-Your code:
-```{r,echo=TRUE}
-#
-#
-```
-
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Intercept: the expected Sales value is 13.04 when Price = 0, answers of Urban and US are both No. 
+Price: a significant statistics, Sales decreases when Price rises.
+US: keep other variables unchanged, if US is yes, Sales will go up.
+Urban: not a significant predictor.
 ~~~
 
 (c) Write out the model in equation form, being careful to handle the qualitative variables properly.
 
-Your code:
-```{r,echo=TRUE}
-#
-#
+```{r}
+summary(lm_10.a)
 ```
+
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+ Sales = 13.04 + -0.05 Price + -0.02 UrbanYes + 1.20 USYes
 ~~~
 
 (d) For which of the predictors can you reject the null hypothesis $H_0 :\beta_j = 0$?
@@ -750,25 +765,21 @@ Please write your answer in full sentences.
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Intercept, price, USYes.
 ~~~
 
 (e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lm_10.e <- lm(Sales ~ Price + US, carseats)
+summary(lm_10.e)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Urban is not significant thus dropped.
 ~~~
 
 
@@ -778,36 +789,38 @@ Please write your answer in full sentences.
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Looking into adj. R-squared, the latter model is slightly improved, yet the poor number suggests a vast need of improvement.
 ~~~
 
 (g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+#ChatGPT
+confint(lm_10.e, level = 0.95)
 ```
 
-Your answer:
-
-~~~
-Please write your answer in full sentences.
-
-
-~~~
 
 (h) Is there evidence of outliers or high leverage observations in the model from (e)?
 
+```{r, fig.width=8, fig.height=6}
+#Residuals
+plot(predict(lm_10.e, carseats), resid(lm_10.e), 
+     xlab = "Predicted Value", ylab = "Residuals",
+     main = "Residual Plot in Problem 10.e")
+abline(h=0)
+#Leverages
+plot(hatvalues(lm_10.e), 
+     ylab = "Leverage Values", xlab = "Observation Number",
+     main = "Leverage Plot in Problem 10.e")
+abline(h = 2 * mean(hatvalues(lm_10.e)), col = "red")
+```
+
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+As shown in residual plot and leverage plot, there are no obvious outliers and high leverage observations.
 ~~~
 
 ## Additional Material
