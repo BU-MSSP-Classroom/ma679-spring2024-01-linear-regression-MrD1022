@@ -377,6 +377,11 @@ Try to answer the following additional questions.
 
 Your code:
 ```{r,echo=TRUE}
+lmfit_2008<- lm(log(SalePrice) ~ `Year Built` + `Year Remod/Add` +
+                  `Full Bath` + `Gr Liv Area` +
+                  `Total Bsmt SF` + `1st Flr SF` + 
+                  `Garage Area`, 
+                ames_raw_2008)
 pred_2009 <- na.omit(exp(predict(lmfit_2008, newdata=ames_raw_2009)))
 calc_loss(pred_2009, ames_raw_2009$SalePrice)
 ```
@@ -384,8 +389,7 @@ calc_loss(pred_2009, ames_raw_2009$SalePrice)
 Your answer:
 
 ~~~
-`*This model has a shrinking RMSE of 68504.59, indicating a better fit than null model or single-predictor models.*`
-
+This model has a shrinking RMSE of 68504.59, indicating a better fit than null model or single-predictor models.
 ~~~
 
 - Should you include all the predictors? Why?
@@ -399,7 +403,7 @@ summary(lmfit_2008)
 Your answer:
 
 ~~~
-`*As seen in the summary, we have large standard errors in "Full Bath" and "1st Flr SF", so these two variables could be excluded.*`
+As seen in the summary, we have large standard errors in "Full Bath" and "1st Flr SF", so these two variables could be excluded.
 ~~~
 
 - What interaction makes sense?  Does your model indicate signs of interaction?
@@ -416,7 +420,7 @@ summary(lmfit_2008_2)
 Your answer:
 
 ~~~
-`Here I drop two not significant variables and add interaction between Gr Liv Area" and "Total Bsmt SF". The interaction is significant, we may think it makes sense. Interaction between "Year Built" and "Year Remod/Add" is considered based on correlation map where the two show strong correlation. However, their interaction does not make very much sense in the summary`
+Here I drop two not significant variables and add interaction between Gr Liv Area" and "Total Bsmt SF". The interaction is significant, we may think it makes sense. Interaction between "Year Built" and "Year Remod/Add" is considered based on correlation map where the two show strong correlation. However, their interaction does not make very much sense in the summary.
 
 
 ~~~
@@ -426,48 +430,70 @@ Your answer:
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lmfit_2008_poly_1 <- lm(formula = log(SalePrice) ~ 
+                     `Year Built` + I(`Year Built`^2) + I(`Year Built`^3), 
+                     data = ames_raw_2008)
+lmfit_2008_poly_2 <- lm(formula = log(SalePrice) ~ 
+                     `Year Remod/Add` + I(`Year Remod/Add`^2) + 
+                       I(`Year Remod/Add`^3), data = ames_raw_2008)
+lmfit_2008_poly_3 <- lm(formula = log(SalePrice) ~ 
+                     `Gr Liv Area` + I(`Gr Liv Area`^2) + 
+                       I(`Gr Liv Area`^3), data = ames_raw_2008)
+lmfit_2008_poly_4 <- lm(formula = log(SalePrice) ~ 
+                     `Total Bsmt SF` + I(`Total Bsmt SF`^2) + 
+                       I(`Total Bsmt SF`^3), data = ames_raw_2008)
+lmfit_2008_poly_5 <- lm(formula = log(SalePrice) ~ 
+                     `Garage Area` + I(`Garage Area`^2) + 
+                       I(`Garage Area`^3), data = ames_raw_2008)
+
+summary(lmfit_2008_poly_1)
+summary(lmfit_2008_poly_2)
+summary(lmfit_2008_poly_3)
+summary(lmfit_2008_poly_4)
+summary(lmfit_2008_poly_5)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+According to p-value shown above, variables "Total Bsmt SF" and "Garage Area" could bear non-linear association with response variable.
 ~~~
 
 - What are the top 5 houses that are most over priced based on your model?
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lmfit_2008_3 <- lm(formula = log(SalePrice) ~ 
+                     `Year Built` + `Year Remod/Add` + 
+                     `Gr Liv Area` * `Total Bsmt SF` + `Garage Area` + 
+                     I(`Total Bsmt SF`^2) + I(`Total Bsmt SF`^3), 
+                   data = ames_raw_2008)
+ames_raw_2009$pred <- exp(predict(lmfit_2008_3, ames_raw_2009))
+ames_raw_2009$difpred <- ames_raw_2009$SalePrice-ames_raw_2009$pred
+# ChatGPT
+d <- ames_raw_2009[rank(ames_raw_2009$difpred, ties.method = "first") <= 5, ]
+d
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Their PID are 0534427010, 0923276250, 0528108020, 0533350090, 0908154080, the five houses having lowest actual-prediction value.  
 ~~~
 
 - What are the top 5 most good deal based on your model?
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+# ChatGPT
+d <- ames_raw_2009[rank(-ames_raw_2009$difpred, ties.method = "first") <= 5, ]
+d
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Their PID are 0528150070, 0528106020, 0528110020, 0528110090, 0528164060.
 ~~~
 
 ## Problem Set
@@ -486,7 +512,7 @@ summary(lm_8.a)
 Your answer:
 
 ~~~
-`*Horsepower is a significant predictor for mpg.*`
+Horsepower is a significant predictor for mpg.
 ~~~
 
 
@@ -494,15 +520,15 @@ Comment on the output.
 For example:
 i. Is there a relationship between the predictor and the response?
 
-`*Yes, p-value is really small. There is a negative relationship since coefficient for horsepower is less than 0, mpg will decrease as horsepower grows.*`
+ - Yes, p-value is really small. There is a negative relationship since coefficient for horsepower is less than 0, mpg will decrease as horsepower grows.
 
 ii. How strong is the relationship between the predictor and the response?
 
-`*p-value of horsepower is small enough thus this predictor is statistically significant; R-squared is around 60%, meaning the model can explain 60% of mpg value, and there are other relationships not captured using this single-predictor model.*`
+ - p-value of horsepower is small enough thus this predictor is statistically significant; R-squared is around 60%, meaning the model can explain 60% of mpg value, and there are other relationships not captured using this single-predictor model.
 
 iii. Is the relationship between the predictor and the response positive or negative?
 
-`*Negative.*`
+ - Negative.
 
 iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction intervals?
 
