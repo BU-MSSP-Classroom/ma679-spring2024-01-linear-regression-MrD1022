@@ -377,6 +377,7 @@ Try to answer the following additional questions.
 
 Your code:
 ```{r,echo=TRUE}
+# It seems R code chunks won't run in a linear fashion. so I copied previous def. here
 lmfit_2008<- lm(log(SalePrice) ~ `Year Built` + `Year Remod/Add` +
                   `Full Bath` + `Gr Liv Area` +
                   `Total Bsmt SF` + `1st Flr SF` + 
@@ -410,11 +411,17 @@ As seen in the summary, we have large standard errors in "Full Bath" and "1st Fl
 
 
 Your code:
-```{r,echo=TRUE}
+```{r,echo=TRUE, fig.width=8, fig.height=6}
 lmfit_2008_2 <- lm(formula = log(SalePrice) ~ 
                      `Year Built` * `Year Remod/Add` + 
                      `Gr Liv Area` * `Total Bsmt SF` + `Garage Area`, data = ames_raw_2008)
 summary(lmfit_2008_2)
+ames_raw_2009$pred <- exp(predict(lmfit_2008_2, ames_raw_2009))
+ames_raw_2009$difpred <- ames_raw_2009$SalePrice-ames_raw_2009$pred
+plot(ames_raw_2009$pred, ames_raw_2009$difpred, 
+     main = "Residuals in 2nd Model", cex = 1.5, pch = 20,
+     ylab = "Residuals", xlab = "Predicted Value")
+abline(h = 0)
 ```
 
 Your answer:
@@ -462,7 +469,7 @@ According to p-value shown above, variables "Total Bsmt SF" and "Garage Area" co
 - What are the top 5 houses that are most over priced based on your model?
 
 Your code:
-```{r,echo=TRUE}
+```{r,echo=TRUE, fig.width=8, fig.height=6}
 lmfit_2008_3 <- lm(formula = log(SalePrice) ~ 
                      `Year Built` + `Year Remod/Add` + 
                      `Gr Liv Area` * `Total Bsmt SF` + `Garage Area` + 
@@ -470,6 +477,10 @@ lmfit_2008_3 <- lm(formula = log(SalePrice) ~
                    data = ames_raw_2008)
 ames_raw_2009$pred <- exp(predict(lmfit_2008_3, ames_raw_2009))
 ames_raw_2009$difpred <- ames_raw_2009$SalePrice-ames_raw_2009$pred
+plot(ames_raw_2009$pred, ames_raw_2009$difpred, 
+     size = 4, main = "Residuals in 3rd Model", 
+     xlab = "Predicted Value", ylab = "Residuals")
+abline(h = 0)
 # ChatGPT
 d <- ames_raw_2009[rank(ames_raw_2009$difpred, ties.method = "first") <= 5, ]
 d
@@ -478,7 +489,8 @@ d
 Your answer:
 
 ~~~
-Their PID are 0534427010, 0923276250, 0528108020, 0533350090, 0908154080, the five houses having lowest actual-prediction value.  
+Their PID are 0534427010, 0923276250, 0528108020, 0533350090, 0908154080, the five houses having lowest actual-prediction value. 
+As seen from the residual plot, the residual is balanced when predicted sale price is below $25,000. However the residuals grow larger as the house price increase. Thus, this model is not capable for relatively expensive houses.
 ~~~
 
 - What are the top 5 most good deal based on your model?
@@ -531,39 +543,51 @@ iii. Is the relationship between the predictor and the response positive or nega
  - Negative.
 
 iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction intervals?
+```{r}
+hrs_98 <- data.frame(horsepower = 98)
+predict(lm_8.a, data.frame(horsepower = 98))
+# ChatGPT
+intvl_confi_8.a <- predict(lm_8.a, hrs_98, interval = "confidence", level = 0.95)
+intvl_confi_8.a
+intvl_pred_8.a <- predict(lm_8.a, hrs_98, interval = "prediction", level = 0.95)
+intvl_pred_8.a
+```
+
 
 (b) Plot the response and the predictor. Use the `abline()` function to display the least squares regression line.
 
-
 Your code:
 ```{r,echo=TRUE}
-#
-#
+coef_8 <- coef(lm_8.a)
+ggplot(auto) + aes(x = horsepower, y = mpg) +
+  geom_point() + 
+  geom_abline(slope = coef_8[2], intercept = coef_8[1], color = "blue") +
+  ggtitle("8.b Linear Regression between mpg and horsepower")
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+As shown above.
 ~~~
 
 
 (c) Use the `plot()` function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with the fit.
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,echo=TRUE, fig.width=8, fig.height=6}
+# Residual Plot
+resid_8.c <- residuals(lm_8.a)
+plot(predict(lm_8.a, auto), resid_8.c, 
+     xlab = "Predicted Value", ylab = "Residuals", 
+     main = "Residuals on Linear Model 8.a")
+abline(h = 0)
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+The residual plot is unbalanced when predicting mpg value under 20. The residual data tend to cluster to the right hand side. 
 ~~~
 
 
@@ -572,17 +596,21 @@ Please write your answer in full sentences.
 (a) Produce a scatterplot matrix which includes all of the variables in the data set.
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,echo=TRUE, fig.width=8, fig.height=6}
+mames_8 <- melt(auto[,c("cylinders", "displacement",
+                      "horsepower", "weight",
+                      "acceleration", "year",
+                      "origin", "name","mpg")],
+              id.vars = "mpg")
+ggplot(mames_8) + geom_point() + 
+  aes(x=value,y = mpg) + 
+  facet_wrap(variable~.,scales = "free")
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Well, failed to modify xlabs.
 ~~~
 
 
@@ -591,17 +619,19 @@ the function cor(). You will need to exclude the name variable,
 cor() which is qualitative.
 
 Your code:
-```{r,echo=TRUE}
-#
-#
+```{r,echo=TRUE, fig.width=6, fig.height=5}
+M <-cor(auto[,c("cylinders", "displacement", "horsepower", "weight",
+                "acceleration", "year", "origin", "mpg")],
+        use="pairwise.complete.obs")
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Horsepower, cylinders, weight, displacement have strong negative correlation to mpg, while the other three quantitative variables have weak positive effects. 
+Plus, for description I think is quantitative not qualitative variables to be mapped in corr() function. 
 ~~~
 
 
